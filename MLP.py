@@ -70,7 +70,7 @@ class Mlp(object):
             soma += x_data[index,x] * self.sinapsesItermediaria[x,index] 
         return self.sigmoid(soma - (1 * self.neuronioIntermediarios[index]))
     
-    def somaIntermediarioSainda(self,x,data):
+    def somaIntermediarioSainda(self,x, ):
         soma =0
         index = x
         for x in range(x,data.shape[0]):
@@ -85,7 +85,7 @@ class Mlp(object):
             print('Erro 1 Corrigindo pesos')
 
     def erroCamadaSainda(self):
-        
+
         
     
     def fit(self,x_data):
@@ -114,3 +114,4 @@ header,x_data,y_data = open_file("iris.csv")
 perceptron = Mlp() #Instanciado MLP
 perceptron.fit(x_data) #iniciando treinamento
 
+ 
