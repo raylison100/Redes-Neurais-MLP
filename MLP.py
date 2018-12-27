@@ -52,12 +52,26 @@ class Mlp(object):
     def __init__(self,alpha=0.01,n_features = 4,n_iter=10, intermedioario = 4, saida = 2):
         self.alhpa = alpha #taxa de aprendizagem
         self.n_iter = n_iter # Treino
+
         self.sinapsesItermediaria = np.random.random((n_features,intermedioario)) #Pesos na camada Intermediaria
         self.sinapsesSaida = np.random.random((intermedioario,saida)) #Pesos na camada Saida
+
         self.neuronioIntermediarios = np.random.random(intermedioario) #Neuronios Intermediarios
-        self.neuronioSaida = np.random.random((saida)) #Neuronios Saida
-        self.neuronioIntermediariosSigmoid = np.zeros(intermedioario)
-        self.neuronioSaidaSigmoid = np.zeros(saida)
+        self.neuronioSaida = np.random.random(saida) #Neuronios Saida
+
+        self.neuronioIntermediariosSigmoid = np.zeros(intermedioario)#Saida dos neuronios intermediarios
+        self.neuronioSaidaSigmoid = np.linspace(-1,-1,saida)#Sainda dos neuronios de saida. Default -1
+
+        self.tempErroCalculadoNeuroniosIntermediario = np.zeros(intermedioario)#Erro do Neuronio intermediario
+        self.tempErroCalculadoNeuroniosSaida = np.zeros(saida)#Erro do Neuronio saida
+
+        self.tempAjusteNeuroniosIntermediarios = np.zeros(intermedioario) #Valor a atualizar neuronio intermediario
+        self.tempAjusteNeuroniosSainda = np.zeros(saida)#Valor a atualizar neuronio saida
+
+        self.tempAjustePesosIntermediarios = np.zeros((n_features,intermedioario))#Valor a atualizar sinapse intermediario
+        self.tempAjustePesosSainda = np.zeros((intermedioario,saida))#Valor a atualizar sinapse saida
+
+        self.erroGerado = 0
 
         
     def sigmoid(self, x):
@@ -70,7 +84,7 @@ class Mlp(object):
             soma += x_data[index,x] * self.sinapsesItermediaria[x,index] 
         return self.sigmoid(soma - (1 * self.neuronioIntermediarios[index]))
     
-    def somaIntermediarioSainda(self,x, ):
+    def somaIntermediarioSainda(self,x,data ):
         soma =0
         index = x
         for x in range(x,data.shape[0]):
@@ -78,29 +92,43 @@ class Mlp(object):
         return self.sigmoid(soma - (1 * self.neuronioSaida[index]))
 
     def validationResult(self):
-        
-        if self.neuronioSaidaSigmoid[0] != 0:
-            print('Erro 0 Corrigindo pesos')
-        if self.neuronioSaidaSigmoid[1] != 1:
-            print('Erro 1 Corrigindo pesos')
+    
+        for x in range(0,self.neuronioSaida.shape[0]):
+            if self.neuronioSaidaSigmoid[x] != x and self.neuronioSaidaSigmoid[x] != -1 :# tem que validar se e nulo 
+                self.calErroGerado(self.neuronioSaidaSigmoid[x],x)
+                self.calErroNeuronioSaida(x)
+         
 
-    def erroCamadaSainda(self):
+    def calErroGerado(self, valorEsperado, valorObtido):
+        self.erroGerado = valorEsperado - valorObtido
 
+    def calErroNeuronioSaida(self,x):
+       self.tempErroCalculadoNeuroniosSaida[x] = (self.neuronioSaidaSigmoid[x]*(1-self.neuronioSaidaSigmoid[x])*self.erroGerado)
         
+    # def calPesoUpdate(self):
+    # def updatePesos(self):            
     
     def fit(self,x_data):
+        a = 0
+        x = 0
+        y = 0
+        w = 0
+        while a < self.n_iter:  
 
-        for a in range (0, self.n_iter):
+            while x < x_data.shape[0] : #percorre toda base de dados           
+                    
+                while y < self.neuronioIntermediarios.shape[0]:# inicia o processo de soma das sinapses
+                    self.neuronioIntermediariosSigmoid[y] = self.somaEntradasIntermediario(y,x_data)
+                    y = y + 1
+
+                while w < self.neuronioSaida.shape[0]:
+                    self.neuronioSaidaSigmoid[w] = self.somaIntermediarioSainda(w,self.neuronioIntermediariosSigmoid)   
+                    w = w + 1
+
+                self.validationResult()
+                x = x + 1
+            a = a + 1
             
-            for x in range(0,x_data.shape[0]): #percorre toda base de dados            
-                    
-                    for y in range(0,self.neuronioIntermediarios.shape[0]):# inicia o processo de soma das sinapses
-                        self.neuronioIntermediariosSigmoid[y] = self.somaEntradasIntermediario(y,x_data)
-
-                    for w in range(0,self.neuronioSaida.shape[0]):
-                        self.neuronioSaidaSigmoid[w] = self.somaIntermediarioSainda(w,self.neuronioIntermediariosSigmoid)   
-                    
-                    self.validationResult()
         
 
 
