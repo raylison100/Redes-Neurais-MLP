@@ -77,24 +77,21 @@ class Mlp(object):
     def sigmoid(self, x):
         return (1 / (1 + np.exp(-x)))
 
-    def somaEntradasIntermediario(self, x,x_data):
+    def somaEntradasIntermediario(self, y,x_data):
+        soma = 0        
+        for x in range(0,x_data.shape[0]):
+            soma += x_data[x] * self.sinapsesItermediaria[x,y]                       
+        return self.sigmoid(soma - (1 * self.neuronioIntermediarios[y]))
+    
+    def somaIntermediarioSainda(self,y,data ):
         soma = 0
-        index = x 
-        for x in range(x,x_data.shape[1]):
-            soma += x_data[index,x] * self.sinapsesItermediaria[x,index] 
-        return self.sigmoid(soma - (1 * self.neuronioIntermediarios[index]))
-    
-    def somaIntermediarioSainda(self,x,data ):
-        soma =0
-        index = x
-        for x in range(x,data.shape[0]):
-            soma += data[x] * self.sinapsesSaida[x,index] 
-        return self.sigmoid(soma - (1 * self.neuronioSaida[index]))
+        for x in range(0,data.shape[0]):
+            soma += data[x] * self.sinapsesSaida[x,y] 
+        return self.sigmoid(soma - (1 * self.neuronioSaida[y]))
 
-    def validationResult(self):
-    
+    def validationResult(self,data):
         for x in range(0,self.neuronioSaida.shape[0]):
-            if self.neuronioSaidaSigmoid[x] != x and self.neuronioSaidaSigmoid[x] != -1 :# tem que validar se e nulo 
+            if self.neuronioSaidaSigmoid[x] != data and self.neuronioSaidaSigmoid[x] != -1 :# tem que validar se e nulo 
                 self.calErroGerado(self.neuronioSaidaSigmoid[x],x)
                 self.calErroNeuronioSaida(x)
          
@@ -105,29 +102,36 @@ class Mlp(object):
     def calErroNeuronioSaida(self,x):
        self.tempErroCalculadoNeuroniosSaida[x] = (self.neuronioSaidaSigmoid[x]*(1-self.neuronioSaidaSigmoid[x])*self.erroGerado)
         
-    # def calPesoUpdate(self):
-    # def updatePesos(self):            
+    def calPesoSinapseUpdateSainda(self,x):
+        index = x
+        while x <= index:
+            self.tempAjustePesosSainda[x,index] = self.alhpa * self.neuronioIntermediariosSigmoid[x] * self.tempErroCalculadoNeuroniosSaida[x]
+        
+    # def calPesoNeuronioUpdateSainda(self):
+    # def calupdatePesos(self):            
     
-    def fit(self,x_data):
+    def fit(self,x_data,y_data):
         a = 0
         x = 0
         y = 0
         w = 0
-        while a < self.n_iter:  
+        while a <= self.n_iter:  
 
             while x < x_data.shape[0] : #percorre toda base de dados           
                     
                 while y < self.neuronioIntermediarios.shape[0]:# inicia o processo de soma das sinapses
-                    self.neuronioIntermediariosSigmoid[y] = self.somaEntradasIntermediario(y,x_data)
-                    y = y + 1
+                    self.neuronioIntermediariosSigmoid[y] = self.somaEntradasIntermediario(y,x_data[x,])
+                    y = y + 1                    
 
                 while w < self.neuronioSaida.shape[0]:
                     self.neuronioSaidaSigmoid[w] = self.somaIntermediarioSainda(w,self.neuronioIntermediariosSigmoid)   
                     w = w + 1
 
-                self.validationResult()
+                self.validationResult(y_data[0])
                 x = x + 1
+                break
             a = a + 1
+            break
             
         
 
@@ -140,6 +144,6 @@ header,x_data,y_data = open_file("iris.csv")
 
 
 perceptron = Mlp() #Instanciado MLP
-perceptron.fit(x_data) #iniciando treinamento
+perceptron.fit(x_data,y_data) #iniciando treinamento
 
  
