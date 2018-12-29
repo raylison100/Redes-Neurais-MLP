@@ -93,21 +93,27 @@ class Mlp(object):
         for x in range(0,self.neuronioSaida.shape[0]):
             if self.neuronioSaidaSigmoid[x] != data and self.neuronioSaidaSigmoid[x] != -1 :# tem que validar se e nulo 
                 self.calErroGerado(self.neuronioSaidaSigmoid[x],x)
-                self.calErroNeuronioSaida(x)
-         
+                self.calErroNeuronioSaida(x)    
+                self.calPesosSinapseNeuronioUpdateSainda(x)      
+                self.calErroNeuroniosIntermediarios(x)               
 
     def calErroGerado(self, valorEsperado, valorObtido):
         self.erroGerado = valorEsperado - valorObtido
-
+ 
     def calErroNeuronioSaida(self,x):
-       self.tempErroCalculadoNeuroniosSaida[x] = (self.neuronioSaidaSigmoid[x]*(1-self.neuronioSaidaSigmoid[x])*self.erroGerado)
+       self.tempErroCalculadoNeuroniosSaida[x] = self.neuronioSaidaSigmoid[x]*(1-self.neuronioSaidaSigmoid[x])*self.erroGerado
         
-    def calPesoSinapseUpdateSainda(self,x):
-        index = x
-        while x <= index:
-            self.tempAjustePesosSainda[x,index] = self.alhpa * self.neuronioIntermediariosSigmoid[x] * self.tempErroCalculadoNeuroniosSaida[x]
+    def calPesosSinapseNeuronioUpdateSainda(self,neuronioSaida):
+        for x in range(0,self.neuronioIntermediariosSigmoid.shape[0]):
+            self.tempAjustePesosSainda[x,neuronioSaida] = self.alhpa * self.neuronioIntermediariosSigmoid[x] * self.tempErroCalculadoNeuroniosSaida[neuronioSaida]
+        self.tempAjusteNeuroniosSainda[neuronioSaida] = self.alhpa * (-1) * self.tempErroCalculadoNeuroniosSaida[neuronioSaida]
         
-    # def calPesoNeuronioUpdateSainda(self):
+    def calErroNeuroniosIntermediarios(self,neuronioSainda):
+        for x in range(0,self.neuronioIntermediariosSigmoid.shape[0]):
+            self.tempErroCalculadoNeuroniosIntermediario[x] = self.neuronioIntermediariosSigmoid[x] * (1 - self.neuronioIntermediariosSigmoid[x]) * (self.tempErroCalculadoNeuroniosSaida[neuronioSainda] * self.sinapsesSaida[x,neuronioSainda])
+
+    # def calPesosSinapseNeuronioIntermediario(self):
+        
     # def calupdatePesos(self):            
     
     def fit(self,x_data,y_data):
@@ -141,9 +147,6 @@ class Mlp(object):
 #y_data: Contem as classes de cada linha de x_data, sendo 0 para setosa e 1 para versicolor
 header,x_data,y_data = open_file("iris.csv")
 
-
-
 perceptron = Mlp() #Instanciado MLP
 perceptron.fit(x_data,y_data) #iniciando treinamento
-
  
