@@ -89,13 +89,16 @@ class Mlp(object):
             soma += data[x] * self.sinapsesSaida[x,y] 
         return self.sigmoid(soma - (1 * self.neuronioSaida[y]))
 
-    def validationResult(self,data):
+    def validationResult(self,saidaEsperada,data):
         for x in range(0,self.neuronioSaida.shape[0]):
-            if self.neuronioSaidaSigmoid[x] != data and self.neuronioSaidaSigmoid[x] != -1 :# tem que validar se e nulo 
+            if self.neuronioSaidaSigmoid[x] != saidaEsperada and self.neuronioSaidaSigmoid[x] != -1 :# tem que validar se e nulo 
                 self.calErroGerado(self.neuronioSaidaSigmoid[x],x)
                 self.calErroNeuronioSaida(x)    
-                self.calPesosSinapseNeuronioUpdateSainda(x)      
-                self.calErroNeuroniosIntermediarios(x)               
+                self.calPesosSinapseNeuronioUpdateSainda(x)
+                for y in range(0,self.neuronioIntermediarios.shape[0]):
+                     self.calErroNeuroniosIntermediarios(y)      
+                     self.calPesosSinapseNeuronioIntermediario(y,data)   
+                         
 
     def calErroGerado(self, valorEsperado, valorObtido):
         self.erroGerado = valorEsperado - valorObtido
@@ -105,14 +108,19 @@ class Mlp(object):
         
     def calPesosSinapseNeuronioUpdateSainda(self,neuronioSaida):
         for x in range(0,self.neuronioIntermediariosSigmoid.shape[0]):
-            self.tempAjustePesosSainda[x,neuronioSaida] = self.alhpa * self.neuronioIntermediariosSigmoid[x] * self.tempErroCalculadoNeuroniosSaida[neuronioSaida]
-        self.tempAjusteNeuroniosSainda[neuronioSaida] = self.alhpa * (-1) * self.tempErroCalculadoNeuroniosSaida[neuronioSaida]
+            self.tempAjustePesosSainda[x,neuronioSaida] = (self.alhpa * self.neuronioIntermediariosSigmoid[x] * self.tempErroCalculadoNeuroniosSaida[neuronioSaida]) + self.sinapsesSaida[x,neuronioSaida]
+        self.tempAjusteNeuroniosSainda[neuronioSaida] = (self.alhpa * (-1) * self.tempErroCalculadoNeuroniosSaida[neuronioSaida]) + self.neuronioSaida[neuronioSaida]
         
     def calErroNeuroniosIntermediarios(self,neuronioSainda):
         for x in range(0,self.neuronioIntermediariosSigmoid.shape[0]):
             self.tempErroCalculadoNeuroniosIntermediario[x] = self.neuronioIntermediariosSigmoid[x] * (1 - self.neuronioIntermediariosSigmoid[x]) * (self.tempErroCalculadoNeuroniosSaida[neuronioSainda] * self.sinapsesSaida[x,neuronioSainda])
 
-    # def calPesosSinapseNeuronioIntermediario(self):
+    def calPesosSinapseNeuronioIntermediario(self, neuronioIntermediario,data):
+        for x in range(0,data.shape[0]):
+            self.tempAjustePesosIntermediarios[x,neuronioIntermediario] = (self.alhpa * data[x] * self.tempErroCalculadoNeuroniosIntermediario[neuronioIntermediario]) + self.sinapsesItermediaria[x,neuronioIntermediario]
+        self.tempAjusteNeuroniosIntermediarios[neuronioIntermediario] = (self.alhpa * (-1) * self.tempErroCalculadoNeuroniosIntermediario[neuronioIntermediario]) + self.neuronioIntermediarios[neuronioIntermediario]
+        
+        
         
     # def calupdatePesos(self):            
     
@@ -125,15 +133,15 @@ class Mlp(object):
 
             while x < x_data.shape[0] : #percorre toda base de dados           
                     
-                while y < self.neuronioIntermediarios.shape[0]:# inicia o processo de soma das sinapses
+                while y < self.neuronioIntermediarios.shape[0]:# inicia o processo de soma das sinapses intermediarias
                     self.neuronioIntermediariosSigmoid[y] = self.somaEntradasIntermediario(y,x_data[x,])
                     y = y + 1                    
 
-                while w < self.neuronioSaida.shape[0]:
+                while w < self.neuronioSaida.shape[0]:# inicia o processo de soma das sinapses de saida 
                     self.neuronioSaidaSigmoid[w] = self.somaIntermediarioSainda(w,self.neuronioIntermediariosSigmoid)   
                     w = w + 1
 
-                self.validationResult(y_data[0])
+                self.validationResult(y_data[0],x_data[x,])
                 x = x + 1
                 break
             a = a + 1
