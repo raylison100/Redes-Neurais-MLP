@@ -31,26 +31,25 @@ def open_file(path):
     with open(path) as dataset: #Usamos with pois garante fechar o documento.
         data = np.array(list(csv.reader(dataset)))#Armazenamos todo o dataset em uma array.
         labels = np.array(list(set(data[1:,-1])))#Essa operação é util para eliminar valores repetidos.
-        header  = data[0] #Esse é o cabeçario da tabela.
-        x_data = np.zeros((len(data)-1,len(data[0])-1))#x_data são os dados para treino.
-        y_data = np.empty(len(data)-1)#y_data são as classe alvo.
- 
-        for x in range(1,len(data)):#O for começa de 1 pois na primeira linha esta o cabeçario.
-            x_data[x-1] = data[x][:-1]#Armazeno em x_data apenas as features.
+        x_data = np.zeros((len(data),len(data[0])-1))#x_data são os dados para treino.
+        y_data = np.zeros(len(data))#y_data são as classe alvo.
+      
+        for x in range(0,len(data)):#O for começa de 1 pois na primeira linha esta o cabeçario.
+            x_data[x] = data[x][:-1]#Armazeno em x_data apenas as features.
  
             for y in range(len(labels)):#dou um for na variavel labels
                 if labels[y] in data[x]:#avalio qual classe esta contida na linha
-                    y_data[x-1] = y#Substituo a string por um float no caso 0 ou 1.
-    return header,x_data,y_data
+                    y_data[x] = y#Substituo a string por um float no caso 0 ou 1.  
+    return x_data,y_data
 
 
 class Mlp(object):
-    """
+    """ 
        alpha: defaut=0.01 # A taxa de aprendizado.
        n_features: O número de features no seu dataset.
        n_iter: O número de iterações realizadas pelo perceptron."""
  
-    def __init__(self,alpha=0.01,n_features = 4,n_iter=500, intermedioario = 4, saida = 2):
+    def __init__(self,alpha=0.01,n_features = 256,n_iter=1, intermedioario = 4, saida = 2):
         self.alhpa = alpha #taxa de aprendizagem
         self.n_iter = n_iter # Treino
         self.features = n_features
@@ -138,6 +137,7 @@ class Mlp(object):
         x = 0
         y = 0
         w = 0
+        print("Iniciando treinamento")
         while a <= self.n_iter:  
 
             while x < x_data.shape[0] : #percorre toda base de dados           
@@ -152,17 +152,17 @@ class Mlp(object):
 
                 self.validationResult(x_data[x,])
                 x = x + 1
-                # break
+                # break  
             a = a + 1
-            # break
-        print("Fim da execucao")
+            # break            
+        print("Fim do Treinamento\n\n\n")
 
     def teste(self,x_data,y_data):
         a = 0
         x = 0
         y = 0
         w = 0
-        while a <= self.n_iter:  
+        while a < self.n_iter:  
 
             while x < x_data.shape[0] : #percorre toda base de dados           
                     
@@ -177,16 +177,19 @@ class Mlp(object):
                 self.validationTeste(y_data[x])
                 x = x + 1
                 
-            a = a + 1
-            
+            a = a + 1            
 
     def validationTeste(self,x):
         distancia0 = self.dist_euclidiana(x,self.neuronioSaidaSigmoid[0])
         distanica1 = self.dist_euclidiana(x,self.neuronioSaidaSigmoid[1])
+        # print(distancia0)
+        # print(distanica1)
         if(distancia0 > distanica1):
-            print("Versicolor") 
+            print("Aviao")
+            # print("Versicolor")
         else:
-            print("Setosa")
+            print("Cachorro")
+            # print("Setosa")             
     
     def dist_euclidiana(self,v1, v2):
         soma =  math.pow(v1 - v2, 2)
@@ -197,9 +200,13 @@ class Mlp(object):
 #header: Contem o cabeçario do dataset sendo que a ultima coluna é a classe.
 #x_data: Contem as features para treino ou seja as primeiras quatro colunas do conjuto.
 #y_data: Contem as classes de cada linha de x_data, sendo 0 para setosa e 1 para versicolor
-header,x_data,y_data = open_file("iris.csv")
-headerT,x_dataT,y_dataT = open_file("teste.csv")
 
-perceptron = Mlp() #Instanciado MLP
+x_data,y_data = open_file("histoTreinamento.csv")
+x_dataT,y_dataT = open_file("histoTeste.csv")
+
+# x_data,y_data = open_file("iris.csv")
+# x_dataT,y_dataT = open_file("teste.csv")
+
+perceptron = Mlp() #Instanciado MLPexit
 perceptron.fit(x_data) #iniciando treinamento
 perceptron.teste(x_dataT,y_dataT)
