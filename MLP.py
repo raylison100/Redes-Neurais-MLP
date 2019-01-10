@@ -91,15 +91,15 @@ class Mlp(object):
         return self.sigmoid(soma - (1 * self.neuronioSaida[y]))
 
     def validationResult(self,data):
-        for x in range(0,self.neuronioSaida.shape[0]):
-            if self.neuronioSaidaSigmoid[x] != x and self.neuronioSaidaSigmoid[x] != -1 :# tem que validar se e nulo 
-                self.calErroGerado(self.neuronioSaidaSigmoid[x],x)
-                self.calErroNeuronioSaida(x)    
-                self.calPesosSinapseNeuronioUpdateSainda(x)
-                self.calErroNeuroniosIntermediarios(x)
-                for y in range(0,self.neuronioIntermediarios.shape[0]):      
-                     self.calPesosSinapseNeuronioIntermediario(y,data) 
-                self.updatePesos(x)     
+        if self.neuronioSaidaSigmoid[data] != data and self.neuronioSaidaSigmoid[data] != -1 :# tem que validar se e nulo 
+            self.calErroGerado(self.neuronioSaidaSigmoid[data],data)
+            self.calErroNeuronioSaida(data)    
+            self.calPesosSinapseNeuronioUpdateSainda(data)
+            self.calErroNeuroniosIntermediarios(data)
+            for y in range(0,self.neuronioIntermediarios.shape[0]):      
+                self.calPesosSinapseNeuronioIntermediario(y,data) 
+            self.updatePesos(data)        
+                 
                                      
     def calErroGerado(self, valorEsperado, valorObtido):
         self.erroGerado = valorEsperado - valorObtido
@@ -132,7 +132,7 @@ class Mlp(object):
                 self.sinapsesItermediaria[x,y] = self.tempAjustePesosIntermediarios[x,y]
             self.neuronioIntermediarios[y] = self.tempAjusteNeuroniosIntermediarios[y]       
     
-    def fit(self,x_data):
+    def fit(self,x_data,y_data):
         a = 0
         x = 0
         y = 0
@@ -150,7 +150,7 @@ class Mlp(object):
                     self.neuronioSaidaSigmoid[w] = self.somaIntermediarioSainda(w,self.neuronioIntermediariosSigmoid)   
                     w = w + 1
 
-                self.validationResult(x_data[x,])
+                self.validationResult(y_data[x])
                 x = x + 1
                 # break  
             a = a + 1
@@ -233,6 +233,6 @@ labels,x_dataT,y_dataT = open_file("teste.csv")
 # label,x_data,y_data = open_file("histogramas.csv")
 
 perceptron = Mlp() #Instanciado MLPexit
-# perceptron.fit(x_data) #iniciando treinamento
+# perceptron.fit(x_data,y_data) #iniciando treinamento
 perceptron.printRede()
 perceptron.teste(x_dataT,y_dataT,labels)
