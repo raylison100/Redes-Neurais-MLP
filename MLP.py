@@ -3,6 +3,7 @@ import csv as csv
 import random
 import matplotlib.pyplot as plt
 import math
+from  tempfile  import  TemporaryFile 
 
 ''' 
     Planejamento de Desenvolvimento
@@ -22,15 +23,19 @@ import math
     Passo 2: Calcular os valores dos neuronios na camada oculta
     Passo 3: Calcular o erro do neuronio na camada de saida
 '''
+def classes(path):
+    with open(path) as dataset:
+        data = np.array(list(csv.reader(dataset)))#Armazenamos todo o dataset em uma array.
+        labels = np.array(list(set(data[1:,-1])))#Essa operação é util para eliminar valores repetidos.
+    return labels
 
-def open_file(path):
+def open_file(path,label):
     """Essa função organiza o dataset para treino
        considerando que as classes que serão o target
        estejam na ultima coluna."""
- 
+
     with open(path) as dataset: #Usamos with pois garante fechar o documento.
         data = np.array(list(csv.reader(dataset)))#Armazenamos todo o dataset em uma array.
-        labels = np.array(list(set(data[1:,-1])))#Essa operação é util para eliminar valores repetidos.
         x_data = np.zeros((len(data),len(data[0])-1))#x_data são os dados para treino.
         y_data = np.zeros(len(data))#y_data são as classe alvo.      
         for x in range(0,len(data)):#O for começa de 1 pois na primeira linha esta o cabeçario.
@@ -38,7 +43,7 @@ def open_file(path):
             for y in range(len(labels)):#dou um for na variavel labels
                 if labels[y] in data[x]:#avalio qual classe esta contida na linha
                     y_data[x] = y#Substituo a string por um float no caso 0 ou 1.  
-    return labels,x_data,y_data
+    return x_data,y_data
 
 
 class Mlp(object):
@@ -47,10 +52,11 @@ class Mlp(object):
        n_features: O número de features no seu dataset. Lembrar de Alterar de acordo com o tamanho do vertor de caracteristicas
        n_iter: O número de iterações realizadas pelo perceptron."""
  
-    def __init__(self,alpha=0.01,n_features = 4,n_iter=1, intermedioario = 2, saida = 2):
+    def __init__(self,alpha,n_features,n_iter, intermedioario, saida,confisao):
         self.alhpa = alpha #taxa de aprendizagem
         self.n_iter = n_iter # Treino
         self.features = n_features
+        self.confisao = np.zeros([confisao,confisao], dtype = int)
 
         self.sinapsesItermediaria = np.random.random((n_features,intermedioario)) #Pesos das snapses na camada Intermediaria
         self.sinapsesSaida = np.random.random((intermedioario,saida)) #Pesos das snapses na camada Saida
@@ -90,15 +96,15 @@ class Mlp(object):
             soma += data[x] * self.sinapsesSaida[x,y] 
         return self.sigmoid(soma - (1 * self.neuronioSaida[y]))
 
-    def validationResult(self,data):
-        if self.neuronioSaidaSigmoid[data] != data and self.neuronioSaidaSigmoid[data] != -1 :# tem que validar se e nulo 
-            self.calErroGerado(self.neuronioSaidaSigmoid[data],data)
-            self.calErroNeuronioSaida(data)    
-            self.calPesosSinapseNeuronioUpdateSainda(data)
-            self.calErroNeuroniosIntermediarios(data)
+    def validationResult(self,classe,entrada):
+        if self.neuronioSaidaSigmoid[classe] != classe and self.neuronioSaidaSigmoid[classe] != -1 :# tem que validar se e nulo 
+            self.calErroGerado(self.neuronioSaidaSigmoid[classe],classe)
+            self.calErroNeuronioSaida(classe)    
+            self.calPesosSinapseNeuronioUpdateSainda(classe)
+            self.calErroNeuroniosIntermediarios(classe)
             for y in range(0,self.neuronioIntermediarios.shape[0]):      
-                self.calPesosSinapseNeuronioIntermediario(y,data) 
-            self.updatePesos(data)        
+                self.calPesosSinapseNeuronioIntermediario(y,entrada) 
+            self.updatePesos(classe)        
                  
                                      
     def calErroGerado(self, valorEsperado, valorObtido):
@@ -138,23 +144,17 @@ class Mlp(object):
         y = 0
         w = 0
         self.Save("-----------Iniciando treinamento---------------\n")
-        while a <= self.n_iter:  
-
+        while a < self.n_iter:
             while x < x_data.shape[0] : #percorre toda base de dados           
-                    
                 while y < self.neuronioIntermediarios.shape[0]:# inicia o processo de soma das sinapses intermediarias
                     self.neuronioIntermediariosSigmoid[y] = self.somaEntradasIntermediario(y,x_data[x,])
                     y = y + 1                    
-
                 while w < self.neuronioSaida.shape[0]:# inicia o processo de soma das sinapses de saida 
                     self.neuronioSaidaSigmoid[w] = self.somaIntermediarioSainda(w,self.neuronioIntermediariosSigmoid)   
-                    w = w + 1
-
-                self.validationResult(y_data[x])
-                x = x + 1
-                # break  
-            a = a + 1
-            # break            
+                    w = w + 1  
+                self.validationResult(int(y_data[x]),x_data[x,])
+                x = x + 1 
+            a = a + 1      
         self.Save("-----------Fim do Treinamento---------------\n\n\n")
 
     def teste(self,x_data,y_data,labels):
@@ -177,18 +177,23 @@ class Mlp(object):
             self.Save("\n")
             x = x + 1
             self.printRede()
-            break
+            # break
+        print(self.confisao)
+        self.Save("---------------------Relatorio---------------------\n")
+        self.SaveNp(self.confisao)    
             
 
     def validationTeste(self,classe,label):
         distanciaM = 0
+        index = -1
         for x in range (0,self.neuronioSaidaSigmoid.shape[0]):
             distancia =  self.dist_euclidiana(classe,self.neuronioSaidaSigmoid[x])
-            if(distancia >= distanciaM):
+            if(distancia > distanciaM or x == 0):
                 distanciaM = distancia
                 index = x
+        self.matrizConfusao(int(classe),index)
         print("CLasse ->  ",label[index])
-        
+     
                          
     def dist_euclidiana(self,v1, v2):
         soma =  math.pow(v1 - v2, 2)
@@ -211,28 +216,39 @@ class Mlp(object):
         self.Save("------------------------------------------\n")
     
     def Save(self,log):
-        arquivo = open('log.txt','a')
+        arquivo = open('log2.txt','a')
         arquivo.write(log)
         arquivo.close()
 
     def SaveNp(self,x):
-        with open('log.txt', 'a') as f:
+        with open('log2.txt', 'a') as f:
             f.write(" ".join(map(str, x)))
 
 
-#header: Contem o cabeçario do dataset sendo que a ultima coluna é a classe.
-#label,x_data: Contem as features para treino ou seja as primeiras quatro colunas do conjuto.
-#label,y_data: Contem as classes de cada linha de x_data, sendo 0 para setosa e 1 para versicolor
+    def matrizConfusao(self,esperado,obtido):
+        self.confisao[esperado,obtido] += 1 
+        
+    # def acuracia
+    # def erro
+    # def precisao
+    # def recall
+    # def fMeasure
 
-# labels,x_data,y_data = open_file("histoTreinamento.csv")
-#labels,x_dataT,y_dataT = open_file("histoTeste.csv")
+"""dataset"""
 
-#labels,x_data,y_data = open_file("iris.csv")
-labels,x_dataT,y_dataT = open_file("teste.csv")
+# labels = classes("histoTreinamento.csv")
+# x_data,y_data = open_file("histoTreinamento.csv",labels)
+# x_dataT,y_dataT = open_file("histoTeste.csv",labels)
 
-# label,x_data,y_data = open_file("histogramas.csv")
+labels = classes("iris.csv")
+x_data,y_data = open_file("iris.csv",labels)
+x_dataT,y_dataT = open_file("teste.csv",labels)
 
-perceptron = Mlp() #Instanciado MLPexit
-# perceptron.fit(x_data,y_data) #iniciando treinamento
+# x_data,y_data = open_file("histogramas.csv",labels)
+""""""
+perceptron = Mlp(alpha=0.01,n_features = x_data.shape[1],n_iter=1, intermedioario = 10, saida = labels.shape[0],confisao = labels.shape[0] ) #Instanciado MLP
+
+perceptron.printRede()
+perceptron.fit(x_data,y_data) #iniciando treinamento
 perceptron.printRede()
 perceptron.teste(x_dataT,y_dataT,labels)
