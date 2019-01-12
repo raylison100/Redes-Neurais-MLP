@@ -11,10 +11,11 @@ from  tempfile  import  TemporaryFile
     2 - Definir a quantidade de neuronio na camada intermediaria e de saida. -----DONE
     3 - Setar os pesos das sinapses de ligação com cada neuronio aleatoriamente. -----DONE
     4 - Contruir funções de calculo do valores sinapticos. -----DONE
-    5 - Calcular função do erro do neuronio. 
-    6 - Calcular erro das sinapses. 
-    7 - Realizar a função de propagação do erro.
-    8 - Contruir função de treinamento.
+    5 - Calcular função do erro do neuronio. -----DONE
+    6 - Calcular erro das sinapses. -----DONE
+    7 - Realizar a função de propagação do erro.-----DONE
+    8 - Contruir função de treinamento.-----DONE
+    9 - COntruir relatorio -----DONE
 '''
 
 '''
@@ -23,6 +24,7 @@ from  tempfile  import  TemporaryFile
     Passo 2: Calcular os valores dos neuronios na camada oculta
     Passo 3: Calcular o erro do neuronio na camada de saida
 '''
+
 def classes(path):
     with open(path) as dataset:
         data = np.array(list(csv.reader(dataset)))#Armazenamos todo o dataset em uma array.
@@ -30,10 +32,6 @@ def classes(path):
     return labels
 
 def open_file(path,label):
-    """Essa função organiza o dataset para treino
-       considerando que as classes que serão o target
-       estejam na ultima coluna."""
-
     with open(path) as dataset: #Usamos with pois garante fechar o documento.
         data = np.array(list(csv.reader(dataset)))#Armazenamos todo o dataset em uma array.
         x_data = np.zeros((len(data),len(data[0])-1))#x_data são os dados para treino.
@@ -45,7 +43,6 @@ def open_file(path,label):
                     y_data[x] = y#Substituo a string por um float no caso 0 ou 1.  
     return x_data,y_data
 
-
 class Mlp(object):
     """ 
        alpha: defaut=0.01 # A taxa de aprendizado.
@@ -56,7 +53,16 @@ class Mlp(object):
         self.alhpa = alpha #taxa de aprendizagem
         self.n_iter = n_iter # Treino
         self.features = n_features
-        self.confisao = np.zeros([confisao,confisao], dtype = int)
+        self.confusao = np.zeros([confisao,confisao], dtype = int)
+        self.acuracia = 0
+        self.somaTotal = 0
+        self.erro =0
+        self.precisao = 0
+        self.recall = 0
+        self.fmeasure = 0
+        self.vp = 0
+        self.fp = 0
+        self.fn = 0
 
         self.sinapsesItermediaria = np.random.random((n_features,intermedioario)) #Pesos das snapses na camada Intermediaria
         self.sinapsesSaida = np.random.random((intermedioario,saida)) #Pesos das snapses na camada Saida
@@ -77,7 +83,6 @@ class Mlp(object):
         self.tempAjustePesosSainda = np.zeros((intermedioario,saida))#Valor a atualizar das sinapses de saida
 
         self.erroGerado = 0
-
         
     def sigmoid(self, x):
         resultado =(1 / (1 + np.exp(-x)))
@@ -104,8 +109,7 @@ class Mlp(object):
             self.calErroNeuroniosIntermediarios(classe)
             for y in range(0,self.neuronioIntermediarios.shape[0]):      
                 self.calPesosSinapseNeuronioIntermediario(y,entrada) 
-            self.updatePesos(classe)        
-                 
+            self.updatePesos(classe)                      
                                      
     def calErroGerado(self, valorEsperado, valorObtido):
         self.erroGerado = valorEsperado - valorObtido
@@ -138,12 +142,13 @@ class Mlp(object):
                 self.sinapsesItermediaria[x,y] = self.tempAjustePesosIntermediarios[x,y]
             self.neuronioIntermediarios[y] = self.tempAjusteNeuroniosIntermediarios[y]       
     
-    def fit(self,x_data,y_data):
+    def fit(self,x_data,y_data):         
+        self.Save("---------Inicio do Treinamento------------\n")
+        self.printRede()
         a = 0
         x = 0
         y = 0
         w = 0
-        self.Save("-----------Iniciando treinamento---------------\n")
         while a < self.n_iter:
             while x < x_data.shape[0] : #percorre toda base de dados           
                 while y < self.neuronioIntermediarios.shape[0]:# inicia o processo de soma das sinapses intermediarias
@@ -155,9 +160,11 @@ class Mlp(object):
                 self.validationResult(int(y_data[x]),x_data[x,])
                 x = x + 1 
             a = a + 1      
-        self.Save("-----------Fim do Treinamento---------------\n\n\n")
+        self.Save("-----------Fim do Treinamento-------------\n")
+        self.printRede()#MLP POS TREINO
 
     def teste(self,x_data,y_data,labels):
+        self.Save("############# Iniciando teste ############\n\n")
         x = 0
         y = 0
         w = 0
@@ -172,17 +179,12 @@ class Mlp(object):
                 w = w + 1
 
             self.validationTeste(y_data[x],labels)
-            self.Save("---------------------Entrada---------------------\n")
-            self.SaveNp(x_data[x,])
+            self.Save("Entrada ----> ")
+            self.Save(str(x_data[x,]))
             self.Save("\n")
             x = x + 1
-            self.printRede()
-            # break
-        print(self.confisao)
-        self.Save("---------------------Relatorio---------------------\n")
-        self.SaveNp(self.confisao)    
-            
-
+        self.CarregaRelatorio()
+                      
     def validationTeste(self,classe,label):
         distanciaM = 0
         index = -1
@@ -193,62 +195,134 @@ class Mlp(object):
                 index = x
         self.matrizConfusao(int(classe),index)
         print("CLasse ->  ",label[index])
-     
-                         
+                     
     def dist_euclidiana(self,v1, v2):
         soma =  math.pow(v1 - v2, 2)
         return math.sqrt(soma)
 
+    def CarregaRelatorio(self):
+        self.somaTotalFunction()
+        self.verdadeirosPositivos()
+        self.falsosNegativos()
+        self.falsosPositivos()
+        self.acuraciaFunction()
+        self.erroFunction()
+        self.precisaoFunction()
+        self.recallFunction()
+        self.fMeasureFunction()
+        # LOG em arquivo
+        self.Save("\n##########################################")
+        self.Save("\n---------------Relatorio------------------\n\n")
+        self.Save("Matriz de confusao:\n") 
+        self.Save(str(self.confusao))  
+        self.Save("\nTotal de elementos: ")  
+        self.Save(str(self.somaTotal))
+        self.Save("\nVerdadeiros positivos: ")
+        self.Save(str(self.vp))
+        self.Save("\nFalsos positivos: ")
+        self.Save(str(self.fp))
+        self.Save("\nFalsos negativos: ")
+        self.Save(str(self.fn))
+        self.Save("\nAcuracia: ")
+        self.Save(str(self.acuracia)) 
+        self.Save("\nErro: ")
+        self.Save(str(self.erro))
+        self.Save("\nPrecisao: ")
+        self.Save(str(self.precisao)) 
+        self.Save("\nRecall: ")
+        self.Save(str(self.recall)) 
+        self.Save("\nF-Measure:")
+        self.Save(str(self.fmeasure))  
+        self.Save("\n\n##########################################\n")
+        self.Save("-------------FIM DA EXECUSAO--------------\n")      
+        self.Save("##########################################\n\n")                    
+
+    def matrizConfusao(self,esperado,obtido):
+        self.confusao[esperado,obtido] += 1 
+        
+    def somaTotalFunction(self):
+        soma = 0
+        for x in range(0,self.confusao.shape[0]):
+            for y in range(0,self.confusao.shape[1]):
+                soma += self.confusao[x,y]
+        self.somaTotal = soma
+
+    def acuraciaFunction(self):        
+        self.acuracia = self.vp/self.somaTotal
+    
+    def erroFunction(self):        
+        self.erro = (self.fp + self.fn)/self.somaTotal
+    
+    def precisaoFunction(self):
+        self.precisao = self.vp/(self.vp + self.fp)
+    
+    def recallFunction(self):
+        self.recall = self.vp/(self.vp + self.fn)
+    
+    def fMeasureFunction(self):
+        self.fmeasure = 2 * ((self.precisao*self.recall)/(self.precisao+self.recall))
+
+    def verdadeirosPositivos(self):
+        somaDiagonal = 0
+        for x in range(0,self.confusao.shape[0]):
+            somaDiagonal += self.confusao[x,x]
+        self.vp = somaDiagonal
+
+    def falsosPositivos(self):
+        fp = 0
+        for x in range(0,self.confusao.shape[0]):
+            for y in range(0,self.confusao.shape[1]):
+                if(x != y and y < x ):
+                    fp += self.confusao[x,y]
+        self.fp = fp   
+
+    def falsosNegativos(self):
+        fn = 0
+        for x in range(0,self.confusao.shape[0]):
+            for y in range(0,self.confusao.shape[1]):
+                if(x != y and y > x ):
+                    fn += self.confusao[x,y]
+        self.fn = fn
+
     def printRede(self):
-        self.Save("------------------------------------------\n")
-        self.SaveNp(self.sinapsesItermediaria) #Pesos das snapses na camada Intermediaria
+        self.Save("------------------------------------------")
+        self.Save("\n#Pesos das snapses na camada Intermediaria: \n")
+        self.Save(str(self.sinapsesItermediaria))
+        self.Save("\n\n#Pesos das snapses na camada Saida\n")
+        self.Save(str(self.sinapsesSaida))
+        self.Save("\n\n#Pesos dos neuronios Intermediarios\n")
+        self.Save(str(self.neuronioIntermediarios)) 
+        self.Save("\n\n#Pesos dos neuronios de Saida\n")
+        self.Save(str(self.neuronioSaida))
+        # self.Save("\n\n#Saida dos neuronios intermediarios\n")
+        # self.Save(str(self.neuronioIntermediariosSigmoid)) 
+        # self.Save("\n\n#Sainda dos neuronios de saida. Default -1\n")
+        # self.Save(str(self.neuronioSaidaSigmoid)) 
         self.Save("\n")
-        self.SaveNp(self.sinapsesSaida) #Pesos das snapses na camada Saida
-        self.Save("\n")
-        self.SaveNp(self.neuronioIntermediarios) #Pesos dos neuronios Intermediarios
-        self.Save("\n")
-        self.SaveNp(self.neuronioSaida)#Pesos dos neuronios de Saida
-        self.Save("\n")
-        self.SaveNp(self.neuronioIntermediariosSigmoid) #Saida dos neuronios intermediarios
-        self.Save("\n")
-        self.SaveNp(self.neuronioSaidaSigmoid) #Sainda dos neuronios de saida. Default -1
-        self.Save("\n")
-        self.Save("------------------------------------------\n")
+        self.Save("------------------------------------------\n\n")
     
     def Save(self,log):
-        arquivo = open('log2.txt','a')
+        arquivo = open('log.txt','a')
         arquivo.write(log)
         arquivo.close()
 
-    def SaveNp(self,x):
-        with open('log2.txt', 'a') as f:
-            f.write(" ".join(map(str, x)))
-
-
-    def matrizConfusao(self,esperado,obtido):
-        self.confisao[esperado,obtido] += 1 
-        
-    # def acuracia
-    # def erro
-    # def precisao
-    # def recall
-    # def fMeasure
-
-"""dataset"""
-
-# labels = classes("histoTreinamento.csv")
-# x_data,y_data = open_file("histoTreinamento.csv",labels)
-# x_dataT,y_dataT = open_file("histoTeste.csv",labels)
+""" dataset """ #configuracao da base
 
 labels = classes("iris.csv")
 x_data,y_data = open_file("iris.csv",labels)
 x_dataT,y_dataT = open_file("teste.csv",labels)
 
-# x_data,y_data = open_file("histogramas.csv",labels)
-""""""
-perceptron = Mlp(alpha=0.01,n_features = x_data.shape[1],n_iter=1, intermedioario = 10, saida = labels.shape[0],confisao = labels.shape[0] ) #Instanciado MLP
+# labels = classes("histoTreinamento.csv")
+# x_data,y_data = open_file("histoTreinamento.csv",labels)
+# x_dataT,y_dataT = open_file("histoTeste.csv",labels)
 
-perceptron.printRede()
-perceptron.fit(x_data,y_data) #iniciando treinamento
-perceptron.printRede()
-perceptron.teste(x_dataT,y_dataT,labels)
+# labels = classes("histogramas.csv")
+# x_data,y_data = open_file("histogramas10.csv",labels)
+# x_dataT,y_dataT = open_file("histogramas10.csv",labels)
+
+""""""
+""" MPL """ #configuracao do MPL
+
+perceptron = Mlp(alpha=0.01,n_features = x_data.shape[1],n_iter=1, intermedioario = 4, saida = labels.shape[0],confisao = labels.shape[0] ) #Instanciado MLP
+perceptron.fit(x_data,y_data) #Iniciando treinamento
+perceptron.teste(x_dataT,y_dataT,labels)#Testando
