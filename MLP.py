@@ -179,9 +179,9 @@ class Mlp(object):
                 w = w + 1
 
             self.validationTeste(y_data[x],labels)
-            self.Save("Entrada ----> ")
-            self.Save(str(x_data[x,]))
-            self.Save("\n")
+            # self.Save("Entrada ----> ")
+            # self.Save(str(x_data[x,]))
+            # self.Save("\n")
             x = x + 1
         self.CarregaRelatorio()
                       
@@ -308,21 +308,21 @@ class Mlp(object):
 
 """ dataset """ #configuracao da base
 
-labels = classes("iris.csv")
-x_data,y_data = open_file("iris.csv",labels)
-x_dataT,y_dataT = open_file("teste.csv",labels)
+labels = classes("Bases/iris.csv")
+x_data,y_data = open_file("Bases/iris.csv",labels)
+x_dataT,y_dataT = open_file("Bases/teste.csv",labels)
 
-# labels = classes("histoTreinamento.csv")
-# x_data,y_data = open_file("histoTreinamento.csv",labels)
-# x_dataT,y_dataT = open_file("histoTeste.csv",labels)
+# labels = classes("Bases/histoTreinamento.csv")
+# x_data,y_data = open_file("Bases/histoTreinamento.csv",labels)
+# x_dataT,y_dataT = open_file("Bases/histoTeste.csv",labels)
 
-# labels = classes("histogramas.csv")
-# x_data,y_data = open_file("histogramas10.csv",labels)
-# x_dataT,y_dataT = open_file("histogramas10.csv",labels)
+# labels = classes("Bases/histogramas10.csv")
+# x_data,y_data = open_file("Bases/histogramas10.csv",labels)
+# x_dataT,y_dataT = open_file("Bases/histogramas10T.csv",labels)
 
 """"""
 """ MPL """ #configuracao do MPL
 
-perceptron = Mlp(alpha=0.01,n_features = x_data.shape[1],n_iter=1, intermedioario = 4, saida = labels.shape[0],confisao = labels.shape[0] ) #Instanciado MLP
+perceptron = Mlp(alpha=0.01,n_features = x_data.shape[1],n_iter=10000, intermedioario = 4, saida = labels.shape[0],confisao = labels.shape[0] ) #Instanciado MLP
 perceptron.fit(x_data,y_data) #Iniciando treinamento
 perceptron.teste(x_dataT,y_dataT,labels)#Testando
