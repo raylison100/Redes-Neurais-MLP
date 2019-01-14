@@ -1,7 +1,6 @@
 import numpy as np
 import csv as csv
 import random
-import matplotlib.pyplot as plt
 import math
 from  tempfile  import  TemporaryFile 
 
@@ -102,7 +101,7 @@ class Mlp(object):
         return self.sigmoid(soma - (1 * self.neuronioSaida[y]))
 
     def validationResult(self,classe,entrada):
-        if self.neuronioSaidaSigmoid[classe] != classe and self.neuronioSaidaSigmoid[classe] != -1 :# tem que validar se e nulo 
+        if self.neuronioSaidaSigmoid[classe] != classe and self.neuronioSaidaSigmoid[classe] <= classe and self.neuronioSaidaSigmoid[classe] != -1 :# tem que validar se e nulo 
             self.calErroGerado(self.neuronioSaidaSigmoid[classe],classe)
             self.calErroNeuronioSaida(classe)    
             self.calPesosSinapseNeuronioUpdateSainda(classe)
@@ -194,7 +193,7 @@ class Mlp(object):
                 distanciaM = distancia
                 index = x
         self.matrizConfusao(int(classe),index)
-        print("CLasse ->  ",label[index])
+        # print("CLasse ->  ",label[index])
                      
     def dist_euclidiana(self,v1, v2):
         soma =  math.pow(v1 - v2, 2)
@@ -308,13 +307,13 @@ class Mlp(object):
 
 """ dataset """ #configuracao da base
 
-labels = classes("Bases/iris.csv")
-x_data,y_data = open_file("Bases/iris.csv",labels)
-x_dataT,y_dataT = open_file("Bases/teste.csv",labels)
+# labels = classes("Bases/iris.csv")
+# x_data,y_data = open_file("Bases/iris.csv",labels)
+# x_dataT,y_dataT = open_file("Bases/teste.csv",labels)
 
-# labels = classes("Bases/histoTreinamento.csv")
-# x_data,y_data = open_file("Bases/histoTreinamento.csv",labels)
-# x_dataT,y_dataT = open_file("Bases/histoTeste.csv",labels)
+labels = classes("Bases/histoTreinamento.csv")
+x_data,y_data = open_file("Bases/histoTreinamento.csv",labels)
+x_dataT,y_dataT = open_file("Bases/histoTeste.csv",labels)
 
 # labels = classes("Bases/histogramas10.csv")
 # x_data,y_data = open_file("Bases/histogramas10.csv",labels)
@@ -323,6 +322,6 @@ x_dataT,y_dataT = open_file("Bases/teste.csv",labels)
 """"""
 """ MPL """ #configuracao do MPL
 
-perceptron = Mlp(alpha=0.01,n_features = x_data.shape[1],n_iter=10000, intermedioario = 4, saida = labels.shape[0],confisao = labels.shape[0] ) #Instanciado MLP
+perceptron = Mlp(alpha=0.4,n_features = x_data.shape[1],n_iter=5000, intermedioario = 4, saida = labels.shape[0],confisao = labels.shape[0] ) #Instanciado MLP
 perceptron.fit(x_data,y_data) #Iniciando treinamento
 perceptron.teste(x_dataT,y_dataT,labels)#Testando
